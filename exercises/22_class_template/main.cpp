@@ -10,6 +10,10 @@ struct Tensor4D {
     Tensor4D(unsigned int const shape_[4], T const *data_) {
         unsigned int size = 1;
         // TODO: 填入正确的 shape 并计算 size
+        for (int i = 0; i < 4; i++) {
+            shape[i] = shape_[i];
+            size *= shape[i];
+        }
         data = new T[size];
         std::memcpy(data, data_, size * sizeof(T));
     }
@@ -28,9 +32,50 @@ struct Tensor4D {
     // 则 `this` 与 `others` 相加时，3 个形状为 `[1, 2, 1, 4]` 的子张量各自与 `others` 对应项相加。
     Tensor4D &operator+=(Tensor4D const &others) {
         // TODO: 实现单向广播的加法
-        return *this;
+        // 计算每个维度的步长
+        unsigned int this_stride[4] = {1, 1, 1, 1};
+        unsigned int other_stride[4] = {1, 1, 1, 1};
+        
+        for (int i = 3; i >= 0; i--) {
+            if (i < 3) {
+                this_stride[i] = this_stride[i + 1] * shape[i + 1];
+                other_stride[i] = other_stride[i + 1] * others.shape[i + 1];
+            }
+        }
+
+        // 遍历所有元素并执行广播加法
+        for (unsigned int i = 0; i < shape[0]; i++) {
+            for (unsigned int j = 0; j < shape[1]; j++) {
+                for (unsigned int k = 0; k < shape[2]; k++) {
+                    for (unsigned int l = 0; l < shape[3]; l++) {
+                        // 计算当前位置在this中的索引
+                        unsigned int this_idx = i * this_stride[0] + 
+                                              j * this_stride[1] + 
+                                              k * this_stride[2] + 
+                                              l * this_stride[3];
+                        
+                        // 计算对应位置在others中的索引（考虑广播）
+                        unsigned int other_i = others.shape[0] == 1 ? 0 : i;
+                        unsigned int other_j = others.shape[1] == 1 ? 0 : j;
+                        unsigned int other_k = others.shape[2] == 1 ? 0 : k;
+                        unsigned int other_l = others.shape[3] == 1 ? 0 : l;
+                        
+                        unsigned int other_idx = other_i * other_stride[0] + 
+                                               other_j * other_stride[1] + 
+                                               other_k * other_stride[2] + 
+                                               other_l * other_stride[3];
+                        
+                        data[this_idx] += others.data[other_idx];
+                    }
+                }
+            }
+        }
+     return *this;
     }
 };
+
+template<class T>
+Tensor4D(unsigned int const[4], T const*) -> Tensor4D<T>;
 
 // ---- 不要修改以下代码 ----
 int main(int argc, char **argv) {
