@@ -8,8 +8,7 @@
 
 int main(int argc, char **argv) {
     std::vector<int> val{8, 13, 21, 34, 55};
-    std::vector<std::string> ans;
-    ans.resize(val.size());
+    std::vector<std::string> ans(val.size());  // 直接在构造时指定大小
     std::transform(val.begin(), val.end(), ans.begin(),
                   [](int x) { return std::to_string(x * 2); });
     ASSERT(ans.size() == val.size(), "ans size should be equal to val size");
